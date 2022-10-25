@@ -6,3 +6,5 @@ vendor/
 .vscode/
 coverage/
 node_modules
+.idea/
+/composer.phar
