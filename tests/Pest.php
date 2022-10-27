@@ -1,7 +1,7 @@
 <?php
 
-use Orchestra\Testbench\TestCase;
 use Pest\TestSuite;
+use PHPUnit\Framework\TestCase;
 
 uses(Based\Fluent\Tests\TestCase::class)->in('Pest');
 
