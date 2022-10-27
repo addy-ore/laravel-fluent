@@ -3,7 +3,7 @@
 namespace Based\Fluent;
 
 /** @mixin \Illuminate\Database\Eloquent\Model */
-trait Fluent
+trait HasFluentBindings
 {
     use HasRelations,
         HasProperties;

@@ -12,7 +12,7 @@ use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionProperty;
 
-/** @mixin \Based\Fluent\Fluent */
+/** @mixin \Based\Fluent\HasFluentBindings */
 trait HasRelations
 {
     protected static Collection $fluentRelations;

@@ -2,13 +2,13 @@
 
 namespace Based\Fluent\Tests\Models;
 
-use Based\Fluent\Fluent;
+use Based\Fluent\HasFluentBindings;
 use Based\Fluent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class Feature extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     #[BelongsTo]
     public Product $product;

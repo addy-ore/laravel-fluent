@@ -4,7 +4,7 @@ namespace Based\Fluent\Tests\Models;
 
 use Based\Fluent\Casts\AsDecimal;
 use Based\Fluent\Casts\Cast;
-use Based\Fluent\Fluent;
+use Based\Fluent\HasFluentBindings;
 use Based\Fluent\Guards\Fillable;
 use Based\Fluent\Guards\Guarded;
 use Carbon\Carbon;
@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 
 class FluentModelUnguardedWithGuards extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     public int $id;
     public string $alpha;
