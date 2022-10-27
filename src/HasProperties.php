@@ -4,6 +4,8 @@ namespace Based\Fluent;
 
 use Based\Fluent\Casts\AbstractCaster;
 use Based\Fluent\Casts\Cast;
+use Based\Fluent\Guards\Fillable;
+use Based\Fluent\Guards\Guarded;
 use Based\Fluent\Relations\AbstractRelation;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +22,7 @@ trait HasProperties
 
     public function __construct(array $attributes = [])
     {
+        $this->buildFluentGuards();
         $this->buildFluentDefaults();
         $this->buildFluentCasts();
 
@@ -192,6 +195,106 @@ trait HasProperties
             });
     }
 
+    /**
+     * Crunch any {@see Fillable} and {@see Guarded} attributes into Laravel's backing arrays.
+     *
+     * @return void
+     */
+    protected function buildFluentGuards(): void
+    {
+        $class = new ReflectionClass($this);
+
+        if (!empty($class->getAttributes(Guarded::class))) {
+            // reset guarded array to ["*"], if it isn't already
+            if ($this->guarded !== ["*"]) {
+                $this->guarded = ["*"];
+            }
+        }
+
+        $allFillable = false;
+        $allFillableExcept = [];
+
+        if (!empty($class->getAttributes(Fillable::class))) {
+            $allFillable = true;
+
+            /** @var Fillable $fillableFlags */
+            $fillableFlags = $class->getAttributes(Fillable::class)[0]->newInstance();
+
+            if (!$fillableFlags->includesPrimaryKey()) {
+                $allFillableExcept[] = $this->getKeyName();
+            }
+
+            if (!$fillableFlags->includesDates()) {
+                $allFillableExcept[] = static::CREATED_AT;
+                $allFillableExcept[] = static::UPDATED_AT;
+                $allFillableExcept[] = defined('static::DELETED_AT') ? static::DELETED_AT : 'deleted_at';
+            }
+        }
+
+        $this->getFluentProperties()
+            ->each(function (ReflectionProperty $property) use ($allFillable, $allFillableExcept) {
+                if (!empty($property->getAttributes(Guarded::class))) {
+                    // explicitly guarded, at the property level
+                    $this->markAsGuarded($property);
+                } else if ($allFillable && !in_array($property->getName(), $allFillableExcept)) {
+                    // implicitly fillable, via a Fillable attribute at the class level
+                    $this->markAsFillable($property);
+                } else if (!empty($property->getAttributes(Fillable::class))) {
+                    // explicitly fillable, at the property level
+                    $this->markAsFillable($property);
+                }
+            });
+    }
+
+    /**
+     * Mark the given individual property as fillable within Laravel's arrays.
+     *
+     * @param ReflectionProperty $property
+     * @return void
+     */
+    private function markAsFillable(ReflectionProperty $property): void
+    {
+        // add this property to the fillable array, if absent
+        if (!in_array($property->getName(), $this->fillable)) {
+            $this->fillable[] = $property->getName();
+        }
+
+        // remove this property from the guarded array, if present
+        if ($this->guarded !== ["*"]) {
+            $indexOf = array_search($property->getName(), $this->guarded);
+
+            if ($indexOf !== false) {
+                $this->guarded = array_splice($this->guarded, $indexOf, 1);
+            }
+        }
+    }
+
+    /**
+     * Mark the given individual property as guarded within Laravel's arrays.
+     *
+     * @param ReflectionProperty $property
+     * @return void
+     */
+    private function markAsGuarded(ReflectionProperty $property): void
+    {
+        $indexOf = array_search($property->getName(), $this->fillable);
+
+        // remove this property from the fillable array, if present
+        if ($indexOf !== false) {
+            $this->fillable = array_splice($this->fillable, $indexOf, 1);
+        }
+
+        // add this property to the guarded array, unless it's already ["*"]
+        if ($this->guarded !== ["*"]) {
+            $this->guarded[] = $property->getName();
+        }
+    }
+
+    /**
+     * Insert any property-level default values into Laravel's $attributes array.
+     *
+     * @return void
+     */
     protected function buildFluentDefaults(): void
     {
         $propertyDefinedDefaults = [];
@@ -241,7 +344,6 @@ trait HasProperties
     private function getFluentCastType(ReflectionProperty $property): ?string
     {
         $type = str_replace('?', '', $property->getType());
-
         $type = match ($type) {
             Collection::class => 'collection',
             Carbon::class => 'datetime',
