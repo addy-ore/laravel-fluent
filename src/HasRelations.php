@@ -67,12 +67,8 @@ trait HasRelations
             ->filter(fn (ReflectionProperty $property) => $property->class === self::class)
             ->filter(fn (ReflectionProperty $property) => $property->hasType())
             ->filter(function (ReflectionProperty $property) {
-                $attributes = collect($property->getAttributes());
-
                 return is_subclass_of($property->getType()->getName(), Model::class)
-                    || $attributes->contains(function (ReflectionAttribute $attribute) {
-                        return is_subclass_of($attribute->getName(), AbstractRelation::class);
-                    });
+                    || !empty($property->getAttributes(AbstractRelation::class, ReflectionAttribute::IS_INSTANCEOF));
             });
     }
 

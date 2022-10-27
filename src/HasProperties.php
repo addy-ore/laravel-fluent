@@ -54,12 +54,8 @@ trait HasProperties
             })
             ->filter(fn (ReflectionProperty $property) => $property->hasType())
             ->reject(function (ReflectionProperty $property) {
-                $attributes = collect($property->getAttributes());
-
                 return is_subclass_of($property->getType()->getName(), Model::class)
-                    || $attributes->contains(function (ReflectionAttribute $attribute) {
-                        return is_subclass_of($attribute->getName(), AbstractRelation::class);
-                    });
+                    || !empty($property->getAttributes(AbstractRelation::class, ReflectionAttribute::IS_INSTANCEOF));
             });
     }
 
@@ -242,46 +238,26 @@ trait HasProperties
      * @param  \ReflectionProperty  $property
      * @return null|string
      */
-    protected function getFluentCastType(ReflectionProperty $property): ?string
+    private function getFluentCastType(ReflectionProperty $property): ?string
     {
         $type = str_replace('?', '', $property->getType());
 
-        if ($attribute = $property->getAttributes()[0] ?? null) {
-            return $this->castFluentAttribute($attribute) ?? $type;
-        }
-
-        return match ($type) {
+        $type = match ($type) {
             Collection::class => 'collection',
             Carbon::class => 'datetime',
             'bool' => 'boolean',
             'int' => 'integer',
             default => $type,
         };
-    }
 
-    /**
-     * Get cast type defined by an attribute.
-     *
-     * @param  \ReflectionAttribute  $attribute
-     * @return null|string
-     */
-    protected function castFluentAttribute(ReflectionAttribute $attribute): ?string
-    {
-        if ($attribute->getName() === Cast::class) {
-            return $attribute->getArguments()[0];
+        if (!empty($abstractCasters = $property->getAttributes(AbstractCaster::class, ReflectionAttribute::IS_INSTANCEOF))) {
+            /** @var AbstractCaster $abstractCaster */
+            // if multiple AbstractCaster attributes are defined, we will favor the first
+            $abstractCaster = $abstractCasters[0]->newInstance();
+
+            return $abstractCaster->asType() ?? $type;
         }
 
-        if (is_subclass_of($attribute->getName(), AbstractCaster::class)) {
-            $caster = new ($attribute->getName())($attribute->getArguments()[0] ?? null);
-
-            return collect([
-                $caster->name,
-                $caster->modifier ?? null,
-            ])
-                ->whereNotNull()
-                ->join(':');
-        }
-
-        return null;
+        return $type;
     }
 }
