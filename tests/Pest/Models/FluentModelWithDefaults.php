@@ -2,12 +2,8 @@
 
 namespace Based\Fluent\Tests\Models;
 
-use Based\Fluent\Casts\AsDecimal;
-use Based\Fluent\Casts\Cast;
 use Based\Fluent\HasFluentBindings;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 class FluentModelWithDefaults extends Model
 {

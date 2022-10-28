@@ -3,7 +3,6 @@
 namespace Based\Fluent;
 
 use Based\Fluent\Casts\AbstractCaster;
-use Based\Fluent\Casts\Cast;
 use Based\Fluent\Guards\Fillable;
 use Based\Fluent\Guards\Guarded;
 use Based\Fluent\Relations\AbstractRelation;
