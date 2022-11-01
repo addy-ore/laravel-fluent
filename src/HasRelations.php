@@ -78,9 +78,9 @@ trait HasRelations
      * @param  string  $key
      * @return null|\ReflectionProperty
      */
-    public function getFluentRelation(string $key): ?ReflectionProperty
+    public static function getFluentRelation(string $key): ?ReflectionProperty
     {
-        return $this->getFluentRelations()
+        return static::getFluentRelations()
             ->filter(fn (ReflectionProperty $property) => $property->getName() === $key)
             ->first();
     }
@@ -97,7 +97,7 @@ trait HasRelations
     {
         $this->relations[$relation] = $value;
 
-        $fluentRelation = $this->getFluentRelation($relation);
+        $fluentRelation = static::getFluentRelation($relation);
 
         if (! $fluentRelation) {
             return $this;
@@ -106,9 +106,9 @@ trait HasRelations
         $fluentRelationType = $fluentRelation->getType();
 
         if ($fluentRelationType->allowsNull() || ! is_null($value)) {
-            $this->{$relation} = $fluentRelationType->getName() == Collection::class
-                ? collect($value)
-                : $value;
+            $this->{$relation} = is_null($value) || $fluentRelationType->getName() != Collection::class
+                ? $value
+                : collect($value);
         }
 
         return $this;
@@ -125,7 +125,7 @@ trait HasRelations
     {
         unset($this->relations[$relation]);
 
-        if ($this->getFluentRelation($relation)) {
+        if (static::getFluentRelation($relation)) {
             unset($this->{$relation});
         }
 
@@ -141,6 +141,11 @@ trait HasRelations
      */
     public function setRelations(array $relations)
     {
+        // unset any relation key that should no longer be present after this call
+        foreach (array_diff(array_keys($relations), array_keys($this->relations)) as $relation) {
+            $this->unsetRelation($relation);
+        }
+
         foreach ($relations as $relation => $value) {
             $this->setRelation($relation, $value);
         }
@@ -157,7 +162,7 @@ trait HasRelations
     public function unsetRelations()
     {
         foreach (array_keys($this->relations) as $relation) {
-            if ($this->getFluentRelation($relation)) {
+            if (static::getFluentRelation($relation)) {
                 unset($this->{$relation});
             }
         }
