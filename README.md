@@ -30,7 +30,7 @@ After:
 
 class Product extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     public Collection $features;
     public float $price;
@@ -52,7 +52,7 @@ Then, add the `Based\Fluent\Fluent` trait to your models:
 
 class User extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 }
 ```
 
@@ -63,7 +63,7 @@ Define the public properties. `laravel-fluent` supports all native types and Lar
 
 class Order extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     public int $amount;
     public Carbon $expires_at;
@@ -83,7 +83,7 @@ Any property being managed by the library can be marked as fillable or guarded b
 
 class Order extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     #[Guarded]
     public int $id;
@@ -130,7 +130,7 @@ The package also handles relationships.
 
 class Product extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     #[Relation]
     public Collection $features;
@@ -155,7 +155,7 @@ The package can automatically resolve relations from attributes, but be aware th
 
 class Product extends Model
 {
-    use Fluent;
+    use HasFluentBindings;
 
     #[HasMany(Feature::class)]
     public Collection $features;
