@@ -76,6 +76,52 @@ class Order extends Model
 }
 ```
 
+### Fillable and guarded
+Any property being managed by the library can be marked as fillable or guarded by annotating it with an attribute.
+```php
+<?php
+
+class Order extends Model
+{
+    use Fluent;
+
+    #[Guarded]
+    public int $id;
+
+    #[Fillable]
+    public int $amount;
+
+    #[Fillable]
+    #[AsDecimal(2)]
+    public float $total;
+
+    #[Cast('encrypted:array')]
+    public array $payload;
+}
+```
+
+These attributes can also be specified at the class level, and they will affect multiple properties.
+```php
+<?php
+
+/*
+ * All properties will be marked as fillable.
+ * See Fillable's documentation for more nuanced controls.
+ */
+#[Fillable(Fillable::INCLUDE_ALL)]
+class Order extends Model
+{
+
+    use HasFluentBindings;
+
+    public int $id;
+    public int $amount;
+
+    #[AsDecimal(2)]
+    public float $total;
+}
+```
+
 ### Relations
 The package also handles relationships.
 
@@ -102,7 +148,7 @@ class Product extends Model
 }
 ```
 
-Relations method declaration is still required for proper autocompletion. However, the package can automatically resolve relations from attributes.
+The package can automatically resolve relations from attributes, but be aware that there will be no autocompletion for the associated laravel-style methods.
 
 ```php
 <?php
@@ -115,6 +161,11 @@ class Product extends Model
     public Collection $features;
     #[BelongsTo]
     public Category $category;
+
+    /*
+     * The Laravel-style methods `features()` and `category()` will
+     * be simulated under the hood, but will lack IDE autocompletion.
+     */
 }
 ```
 
